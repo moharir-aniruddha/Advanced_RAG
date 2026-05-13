@@ -16,6 +16,10 @@ from app.memory.conversation_memory import (
     ConversationMemory
 )
 
+from app.agents.retrieval_agent import (
+    RetrievalAgent
+)
+
 from app.observability.logger import (
     logger
 )
@@ -41,6 +45,12 @@ class ResponseGenerator:
 
         self.memory = ConversationMemory()
 
+        self.retrieval_agent = RetrievalAgent(
+            self.retriever,
+            self.reranker,
+            self.query_rewriter
+        )
+
     def generate_response(self, query):
 
         start_time = time.time()
@@ -49,39 +59,34 @@ class ResponseGenerator:
 
         chat_history = self.memory.get_history()
 
-        rewritten_query = self.query_rewriter.rewrite(
-            query,
-            chat_history
+        (
+            rewritten_query,
+            reranked_docs
+        ) = (
+            self.retrieval_agent
+            .run_agentic_retrieval(
+                query,
+                chat_history
+            )
         )
 
         logger.info(
-            f"Rewritten Query: "
+            f"Final Agent Query: "
             f"{rewritten_query}"
         )
 
-        print("\nRewritten Query:\n")
-        print(rewritten_query)
-
-        retrieved_docs = self.retriever.retrieve(
-            rewritten_query
-        )
-
         evaluation = (
-            RetrievalEvaluator.evaluate_retrieval(
+            RetrievalEvaluator
+            .evaluate_retrieval(
                 query,
                 rewritten_query,
-                retrieved_docs
+                reranked_docs
             )
         )
 
         logger.info(
             f"Retrieval Evaluation: "
             f"{evaluation}"
-        )
-
-        reranked_docs = self.reranker.rerank(
-            rewritten_query,
-            retrieved_docs
         )
 
         context = "\n\n".join([
@@ -97,10 +102,9 @@ class ResponseGenerator:
         prompt = f"""
 You are a helpful AI assistant.
 
-Use the provided context to answer
-the question.
+Use ONLY the provided context.
 
-If the answer is not available,
+If the answer is unavailable,
 say:
 "I could not find relevant information."
 
