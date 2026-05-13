@@ -1,11 +1,13 @@
-from app.retrieval.retriever import Retriever
+from app.retrieval.hybrid_retriever import HybridRetriever
+
 
 class ResponseGenerator:
 
     def __init__(self, llm):
 
         self.llm = llm
-        self.retriever = Retriever()
+
+        self.retriever = HybridRetriever()
 
     def generate_response(self, query):
 
@@ -16,19 +18,20 @@ class ResponseGenerator:
         ])
 
         prompt = f"""
-    ```
-    
-    You are a helpful AI assistant.
-    
-    Answer ONLY from the provided context.
-    Say "I do not know the answer" if relevant answers are absent in the given context.
-    Context:
-    {context}
-    
-    Question:
-    {query}
-    """
+You are a helpful AI assistant.
 
+Answer ONLY from the provided context.
+
+If the answer is not present in context,
+say:
+"I could not find relevant information."
+
+Context:
+{context}
+
+Question:
+{query}
+"""
 
         response = self.llm.invoke(prompt)
 
@@ -38,7 +41,6 @@ class ResponseGenerator:
         ]))
 
         return {
-            "answer": response,
+            "answer": response.content,
             "sources": sources
         }
-

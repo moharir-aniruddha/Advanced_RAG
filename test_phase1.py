@@ -8,5 +8,4 @@ ingest_url(TEST_URL)
 
 print("\n--- ASKING QUESTIONS ---\n")
 
-res = chat("What is RAG")
-print(res)
+chat("What does FAISS use?")
