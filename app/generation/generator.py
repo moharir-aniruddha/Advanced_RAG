@@ -1,4 +1,5 @@
 from app.retrieval.hybrid_retriever import HybridRetriever
+from app.reranking.reranker import Reranker
 
 
 class ResponseGenerator:
@@ -9,12 +10,22 @@ class ResponseGenerator:
 
         self.retriever = HybridRetriever()
 
+        self.reranker = Reranker()
+
     def generate_response(self, query):
 
-        docs = self.retriever.retrieve(query)
+        retrieved_docs = self.retriever.retrieve(
+            query
+        )
+
+        reranked_docs = self.reranker.rerank(
+            query,
+            retrieved_docs
+        )
 
         context = "\n\n".join([
-            doc.page_content for doc in docs
+            doc.page_content
+            for doc in reranked_docs
         ])
 
         prompt = f"""
@@ -37,7 +48,7 @@ Question:
 
         sources = list(set([
             doc.metadata.get("source", "Unknown")
-            for doc in docs
+            for doc in reranked_docs
         ]))
 
         return {

@@ -8,4 +8,4 @@ ingest_url(TEST_URL)
 
 print("\n--- ASKING QUESTIONS ---\n")
 
-chat("What does FAISS use?")
+chat("What is Retrieval-Augmented Generation?")
