@@ -1,0 +1,15 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+EMBEDDING_MODEL = "BAAI/bge-small-en"
+
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 100
+
+VECTOR_DB_PATH = "vectorstore/faiss_index"
+
+TOP_K_RESULTS = 5
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
