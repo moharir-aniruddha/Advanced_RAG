@@ -1,5 +1,8 @@
 from app.retrieval.hybrid_retriever import HybridRetriever
+
 from app.reranking.reranker import Reranker
+
+from app.query_transform.query_rewriter import QueryRewriter
 
 
 class ResponseGenerator:
@@ -12,14 +15,25 @@ class ResponseGenerator:
 
         self.reranker = Reranker()
 
+        self.query_rewriter = QueryRewriter(
+            llm
+        )
+
     def generate_response(self, query):
 
-        retrieved_docs = self.retriever.retrieve(
+        rewritten_query = self.query_rewriter.rewrite(
             query
         )
 
+        print("\nRewritten Query:\n")
+        print(rewritten_query)
+
+        retrieved_docs = self.retriever.retrieve(
+            rewritten_query
+        )
+
         reranked_docs = self.reranker.rerank(
-            query,
+            rewritten_query,
             retrieved_docs
         )
 
