@@ -5,6 +5,10 @@ from app.config import (
     FINAL_TOP_K
 )
 
+from app.observability.logger import (
+    logger
+)
+
 
 class Reranker:
 
@@ -32,14 +36,14 @@ class Reranker:
             reverse=True
         )
 
+        logger.info(
+            f"Reranker Scores: "
+            f"{[float(score) for _, score in scored_docs]}"
+        )
+
         reranked_docs = [
             doc
             for doc, score in scored_docs[:FINAL_TOP_K]
         ]
-
-        for idx, (doc, score) in enumerate(scored_docs[:FINAL_TOP_K]):
-            print(f"\nRANK {idx + 1}")
-            print(f"SCORE: {score}")
-            print(doc.page_content[:300])
 
         return reranked_docs
