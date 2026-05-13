@@ -8,4 +8,5 @@ ingest_url(TEST_URL)
 
 print("\n--- ASKING QUESTIONS ---\n")
 
+chat("What is Retrieval-Augmented Generation?")
 chat("What about its architecture?")

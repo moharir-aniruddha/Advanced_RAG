@@ -4,6 +4,10 @@ from app.reranking.reranker import Reranker
 
 from app.query_transform.query_rewriter import QueryRewriter
 
+from app.memory.conversation_memory import (
+    ConversationMemory
+)
+
 
 class ResponseGenerator:
 
@@ -19,10 +23,15 @@ class ResponseGenerator:
             llm
         )
 
+        self.memory = ConversationMemory()
+
     def generate_response(self, query):
 
+        chat_history = self.memory.get_history()
+
         rewritten_query = self.query_rewriter.rewrite(
-            query
+            query,
+            chat_history
         )
 
         print("\nRewritten Query:\n")
@@ -45,11 +54,14 @@ class ResponseGenerator:
         prompt = f"""
 You are a helpful AI assistant.
 
-Answer ONLY from the provided context.
+Use the provided context to answer the question.
 
-If the answer is not present in context,
+If the answer is not available in context,
 say:
 "I could not find relevant information."
+
+Conversation History:
+{chat_history}
 
 Context:
 {context}
@@ -58,7 +70,31 @@ Question:
 {query}
 """
 
-        response = self.llm.invoke(prompt)
+        print("\nStreaming Response:\n")
+
+        response = self.llm.stream(prompt)
+
+        final_answer = ""
+
+        for chunk in response:
+
+            content = chunk.content
+
+            print(content, end="", flush=True)
+
+            final_answer += content
+
+        print()
+
+        self.memory.add_message(
+            "User",
+            query
+        )
+
+        self.memory.add_message(
+            "Assistant",
+            final_answer
+        )
 
         sources = list(set([
             doc.metadata.get("source", "Unknown")
@@ -66,6 +102,6 @@ Question:
         ]))
 
         return {
-            "answer": response.content,
+            "answer": final_answer,
             "sources": sources
         }

@@ -4,27 +4,33 @@ class QueryRewriter:
 
         self.llm = llm
 
-    def rewrite(self, query):
+    def rewrite(self, query, chat_history):
+
         prompt = f"""
-        You are a retrieval query optimizer for a RAG system.
+You are a retrieval query optimizer for a RAG system.
 
-        Your job is to rewrite user questions into
-        clear, specific, retrieval-friendly search queries.
+Your task is to rewrite user questions into
+clear and retrieval-friendly search queries.
 
-        Rules:
-        - Preserve the original meaning
-        - Do NOT ask follow-up questions
-        - Do NOT ask for clarification
-        - Convert vague references into explicit topics
-        - Expand short queries into searchable queries
-        - Keep the rewritten query concise
-        - Return ONLY the rewritten query
-        - The rewritten query must look like a search query,
-          NOT like a chatbot response
+Use conversation history when resolving:
+- vague references
+- pronouns
+- follow-up questions
 
-        User Query:
-        {query}
-        """
+Rules:
+- Preserve original meaning
+- Do NOT ask clarification questions
+- Convert vague references into explicit topics
+- Keep important entities from chat history
+- Return ONLY the rewritten query
+- The output must look like a search query
+
+Conversation History:
+{chat_history}
+
+User Query:
+{query}
+"""
 
         response = self.llm.invoke(prompt)
 
