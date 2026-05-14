@@ -31,9 +31,11 @@ from app.observability.evaluator import (
 
 class ResponseGenerator:
 
-    def __init__(self, llm):
+    def __init__(self, llm, memory):
 
         self.llm = llm
+
+        self.memory = memory
 
         self.retriever = HybridRetriever()
 
@@ -51,13 +53,13 @@ class ResponseGenerator:
             self.query_rewriter
         )
 
-    def generate_response(self, query):
+    def generate_response(self, query, session_id="default"):
 
         start_time = time.time()
 
         logger.info(f"User Query: {query}")
 
-        chat_history = self.memory.get_history()
+        chat_history = self.memory.get_history(session_id)
 
         (
             rewritten_query,
@@ -105,31 +107,26 @@ class ResponseGenerator:
             f"{len(context)}"
         )
 
+        # 4. Professional Synthesis Prompt
         prompt = f"""
-        You are a sophisticated AI assistant capable of cross-document synthesis.
-        Use the provided context to answer the question. 
+        You are a professional Corporate AI Assistant. Your goal is to provide a clean, 
+        well-structured, and authoritative response based on the provided context.
 
-        Guidelines:
-        1. If the information comes from different sources, compare and contrast them in your answer.
-        2. Always mention which source (URL) the information comes from.
-        3. If the sources contradict each other, highlight that contradiction.
-        4. Use ONLY the provided context. If the answer isn't there, say you can't find it.
+        CRITICAL INSTRUCTIONS:
+        1. **Response Style**: Write in a clear, professional prose or use bullet points where appropriate. 
+        2. **No Inline Citations**: DO NOT include URLs, bracketed sources, or "(Source: ...)" tags 
+           within the body of your response. The main text should be completely clean.
+        3. **Synthesis**: Compare and combine information from different provided sources naturally.
         
-        CRITICAL INSTRUCTION: 
-Your context contains information from MULTIPLE domains ({list(set(unique_sources))}). 
-If the user asks a broad or comparative question, you MUST look for relevant 
-details in every source provided. Do not rely on just one URL if others 
-contain overlapping information.
-
-        if answer is not found in the context just say "I don't know" 
+        4. If the answer is not present in the context just say "I don't know the answer.". Strictly Do not stretch it much
 
         Conversation History:
         {chat_history}
 
-        Context:
+        Context from Multiple Sources:
         {context}
 
-        Question:
+        User Question:
         {query}
         """
 
@@ -166,15 +163,11 @@ contain overlapping information.
             f"{final_answer}"
         )
 
-        self.memory.add_message(
-            "User",
-            query
-        )
-
-        self.memory.add_message(
-            "Assistant",
-            final_answer
-        )
+        try:
+            self.memory.add_message(session_id, "User", query)
+            self.memory.add_message(session_id, "Assistant", final_answer)
+        except Exception as e:
+            print(f"\nMemory Error: {e}")
 
         sources = list(set([
             doc.metadata.get(

@@ -1,25 +1,23 @@
 class ConversationMemory:
-
     def __init__(self):
+        # Dictionary to store history per session_id
+        self.sessions = {}
 
-        self.chat_history = []
+    def get_history(self, session_id: str):
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
 
-    def add_message(self, role, content):
+        # Format history as a string for the prompt
+        history_str = ""
+        for msg in self.sessions[session_id]:
+            history_str += f"{msg['role']}: {msg['content']}\n"
+        return history_str
 
-        self.chat_history.append({
-            "role": role,
-            "content": content
-        })
+    def add_message(self, session_id: str, role: str, content: str):
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
+        self.sessions[session_id].append({"role": role, "content": content})
 
-    def get_history(self):
-
-        formatted_history = ""
-
-        for message in self.chat_history:
-
-            formatted_history += (
-                f"{message['role']}: "
-                f"{message['content']}\n"
-            )
-
-        return formatted_history
+        # Keep only the last 10 messages to save context window space
+        if len(self.sessions[session_id]) > 10:
+            self.sessions[session_id] = self.sessions[session_id][-10:]
