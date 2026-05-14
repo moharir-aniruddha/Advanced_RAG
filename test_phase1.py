@@ -1,12 +1,25 @@
-from app.main import ingest_url, chat
+from app.main import ingest_urls, chat, clear_data
 
-TEST_URL = "https://en.wikipedia.org/wiki/Retrieval-augmented_generation"
+# 1. CLEAR OLD DATA (To get rid of the stale 'Retrieval-augmented generation' page)
+clear_data()
 
-print("\n--- INGESTING DOCUMENT ---\n")
+TEST_URLS = [
+    "https://en.wikipedia.org/wiki/Large_language_model",
+    "https://www.ibm.com/topics/artificial-intelligence",
+    "https://docs.python.org/3/tutorial/introduction.html"
+]
 
-ingest_url(TEST_URL)
+print("\n--- INGESTING 3 DOMAINS ---\n")
+ingest_urls(TEST_URLS)
 
-print("\n--- ASKING QUESTIONS ---\n")
+print("\n--- TEST 1: Wikipedia Domain ---")
+chat("What are LLMs?")
 
-chat("What is RAG")
-chat("How does retrieval happen?")
+print("\n--- TEST 2: IBM Domain ---")
+chat("How does IBM explain AI?")
+
+print("\n--- TEST 3: Python Domain ---")
+chat("What can Python do as a calculator?")
+
+print("\n--- TEST 4: Cross-Document Synthesis ---")
+chat("Based on all sources, how is the relationship between AI and LLMs described?")

@@ -88,11 +88,17 @@ class ResponseGenerator:
             f"Retrieval Evaluation: "
             f"{evaluation}"
         )
-
-        context = "\n\n".join([
-            doc.page_content
+        unique_sources = list(set([
+            doc.metadata.get("source", "Unknown source")
             for doc in reranked_docs
-        ])
+        ]))
+
+        context_parts = []
+        for doc in reranked_docs:
+            source = doc.metadata.get("source", "Unknown")
+            context_parts.append(f"SOURCE: {source}\nCONTENT: {doc.page_content}")
+
+        context = "\n\n---\n\n".join(context_parts)
 
         logger.info(
             f"Final Context Length: "
@@ -100,23 +106,32 @@ class ResponseGenerator:
         )
 
         prompt = f"""
-You are a helpful AI assistant.
+        You are a sophisticated AI assistant capable of cross-document synthesis.
+        Use the provided context to answer the question. 
 
-Use ONLY the provided context.
+        Guidelines:
+        1. If the information comes from different sources, compare and contrast them in your answer.
+        2. Always mention which source (URL) the information comes from.
+        3. If the sources contradict each other, highlight that contradiction.
+        4. Use ONLY the provided context. If the answer isn't there, say you can't find it.
+        
+        CRITICAL INSTRUCTION: 
+Your context contains information from MULTIPLE domains ({list(set(unique_sources))}). 
+If the user asks a broad or comparative question, you MUST look for relevant 
+details in every source provided. Do not rely on just one URL if others 
+contain overlapping information.
 
-If the answer is unavailable,
-say:
-"I could not find relevant information."
+        if answer is not found in the context just say "I don't know" 
 
-Conversation History:
-{chat_history}
+        Conversation History:
+        {chat_history}
 
-Context:
-{context}
+        Context:
+        {context}
 
-Question:
-{query}
-"""
+        Question:
+        {query}
+        """
 
         print("\nStreaming Response:\n")
 
