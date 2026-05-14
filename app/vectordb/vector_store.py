@@ -43,18 +43,34 @@ class VectorStoreManager:
 
     @staticmethod
     def clear_database():
-        """Helper to delete old data before a new test run."""
+        """Helper to delete old data files physically."""
         if os.path.exists("vectorstore"):
             shutil.rmtree("vectorstore")
+            # Recreate the folder structure so it's ready for new data
             os.makedirs("vectorstore")
-            print("Database cleared successfully.")
+            print("Database files cleared successfully.")
 
     @staticmethod
     def load_vector_store():
+        """Defensive loading to prevent crashes when the DB is empty."""
         embedding_model = get_embedding_model()
-        return FAISS.load_local(VECTOR_DB_PATH, embedding_model, allow_dangerous_deserialization=True)
+
+        # Check if the specific FAISS index file exists before loading
+        index_file = os.path.join(VECTOR_DB_PATH, "index.faiss")
+        if not os.path.exists(index_file):
+            print("No FAISS index found. Returning None.")
+            return None
+
+        return FAISS.load_local(
+            VECTOR_DB_PATH,
+            embedding_model,
+            allow_dangerous_deserialization=True
+        )
 
     @staticmethod
     def load_documents():
-        if not os.path.exists(DOCUMENT_STORE_PATH): return []
-        with open(DOCUMENT_STORE_PATH, "rb") as f: return pickle.load(f)
+        """Returns an empty list if the documents file doesn't exist."""
+        if not os.path.exists(DOCUMENT_STORE_PATH):
+            return []
+        with open(DOCUMENT_STORE_PATH, "rb") as f:
+            return pickle.load(f)

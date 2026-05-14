@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
-from app.main import ingest_urls, chat as rag_chat
+from app.main import ingest_urls, chat as rag_chat, clear_data # Added clear_data
 import uvicorn
 
 app = FastAPI(title="Advanced RAG Chatbot API")
@@ -25,9 +25,23 @@ async def handle_ingestion(request: IngestRequest):
 @app.post("/chat")
 async def handle_chat(request: ChatRequest):
     try:
-        # Note: You'll need to update your app.main.chat to accept session_id
+        # Note: This returns the generator/response from app.main.chat
         response = rag_chat(request.query, session_id=request.session_id)
         return response
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/clear")
+async def handle_clear():
+    """
+    Endpoint to trigger a full system wipe.
+    Deletes physical files and re-initializes global variables.
+    """
+    try:
+        clear_data()
+        return {"message": "Knowledge base and memory cleared successfully."}
     except Exception as e:
         import traceback
         traceback.print_exc()
