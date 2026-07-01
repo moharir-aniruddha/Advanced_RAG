@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
 import uuid
+import os
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Corporate AI Assistant", page_icon="🤖")
 
@@ -24,7 +27,10 @@ with st.sidebar:
         if urls:
             with st.spinner("Analyzing documents..."):
                 try:
-                    resp = requests.post("http://localhost:8000/ingest", json={"urls": urls})
+                    resp = requests.post(
+                        f"{BACKEND_URL}/ingest",
+                        json={"urls": urls}
+                    )
                     if resp.status_code == 200:
                         st.success("Knowledge Base Updated!")
                     else:
@@ -39,7 +45,7 @@ with st.sidebar:
     if st.button("🗑️ Wipe Knowledge Base", help="Deletes all ingested data and chat history", use_container_width=True):
         with st.spinner("Clearing system..."):
             try:
-                resp = requests.post("http://localhost:8000/clear")
+                resp = requests.post(f"{BACKEND_URL}/clear")
                 if resp.status_code == 200:
                     # Clear local UI state immediately
                     st.session_state.messages = []
@@ -74,7 +80,10 @@ if prompt := st.chat_input("Ask me anything about the ingested docs..."):
         with st.spinner("Thinking..."):
             try:
                 payload = {"session_id": st.session_state.session_id, "query": prompt}
-                response = requests.post("http://localhost:8000/chat", json=payload)
+                response = requests.post(
+                    f"{BACKEND_URL}/chat",
+                    json=payload
+                )
 
                 if response.status_code == 200:
                     data = response.json()
